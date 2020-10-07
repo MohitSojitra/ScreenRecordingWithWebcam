@@ -13,6 +13,8 @@ async function startRecording() {
   await startVideo();
   stream = await navigator.mediaDevices.getDisplayMedia({
     video: { mediaSource: "self" },
+    controll: false,
+
     // video: { cursor: "always", displaySurface: "browser" },
     // video: true,
   });
@@ -36,6 +38,7 @@ async function startRecording() {
   });
 
   recorder.addEventListener("stop", async function () {
+    console.log("stop run");
     let b = new Blob(chunks);
     downloadLink.href = URL.createObjectURL(b);
     console.log(downloadLink.href);
@@ -45,6 +48,16 @@ async function startRecording() {
     console.log(completeBlob);
     console.log(URL.createObjectURL(completeBlob));
     video1.src = URL.createObjectURL(completeBlob);
+
+    // stop webcam video code
+    var tracks = streamVideo.getTracks();
+    for (var i = 0; i < tracks.length; i++) {
+      var track = tracks[i];
+      track.stop();
+    }
+
+    video2.srcObject = null;
+    //end stop webcam video code
 
     let fi = new File([b], "mohit.webm");
     let formData = new FormData();
@@ -57,15 +70,6 @@ async function startRecording() {
 
     let x = await fetch("http://localhost:3000/post", params);
     console.log(await x.json());
-    // stop webcam video code
-    var tracks = streamVideo.getTracks();
-    for (var i = 0; i < tracks.length; i++) {
-      var track = tracks[i];
-      track.stop();
-    }
-
-    video2.srcObject = null;
-    //end stop webcam video code
   });
 
   recorder.start();
@@ -91,4 +95,6 @@ stop.addEventListener("click", async () => {
   stop.setAttribute("disabled", true);
   start.removeAttribute("disabled");
   shouldStop = true;
+  recorder.stop();
+  stream.getVideoTracks()[0].stop();
 });
