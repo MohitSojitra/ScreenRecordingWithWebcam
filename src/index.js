@@ -35,6 +35,39 @@ async function startRecording() {
     }
   });
 
+  recorder.addEventListener("stop", async function () {
+    let b = new Blob(chunks);
+    downloadLink.href = URL.createObjectURL(b);
+    console.log(downloadLink.href);
+    downloadLink.download = "acetest.webm";
+
+    const completeBlob = new Blob(chunks, { type: chunks[0].type });
+    console.log(completeBlob);
+    console.log(URL.createObjectURL(completeBlob));
+    video1.src = URL.createObjectURL(completeBlob);
+
+    let fi = new File([b], "mohit.webm");
+    let formData = new FormData();
+    formData.append("recordVideo", fi);
+
+    let params = {
+      method: "POSt",
+      body: formData,
+    };
+
+    let x = await fetch("http://localhost:3000/post", params);
+    console.log(await x.json());
+    // stop webcam video code
+    var tracks = streamVideo.getTracks();
+    for (var i = 0; i < tracks.length; i++) {
+      var track = tracks[i];
+      track.stop();
+    }
+
+    video2.srcObject = null;
+    //end stop webcam video code
+  });
+
   recorder.start();
 }
 
@@ -58,24 +91,4 @@ stop.addEventListener("click", async () => {
   stop.setAttribute("disabled", true);
   start.removeAttribute("disabled");
   shouldStop = true;
-
-  recorder.addEventListener("stop", function () {
-    downloadLink.href = URL.createObjectURL(new Blob(chunks));
-    downloadLink.download = "acetest.webm";
-
-    const completeBlob = new Blob(chunks, { type: chunks[0].type });
-    console.log(completeBlob);
-    console.log(URL.createObjectURL(completeBlob));
-    video1.src = URL.createObjectURL(completeBlob);
-
-    // stop webcam video code
-    var tracks = streamVideo.getTracks();
-    for (var i = 0; i < tracks.length; i++) {
-      var track = tracks[i];
-      track.stop();
-    }
-
-    video2.srcObject = null;
-    //end stop webcam video code
-  });
 });
