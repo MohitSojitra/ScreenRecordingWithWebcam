@@ -2,38 +2,38 @@ const start = document.getElementById("start");
 const stop = document.getElementById("stop");
 const video1 = document.getElementById("video1");
 const video2 = document.getElementById("video2");
+const downloadLink = document.getElementById("download");
 
 let recorder, stream, streamVideo;
-
+let shouldStop = false;
+let stopped = false;
+let cunks;
 // start screen recording
 async function startRecording() {
   await startVideo();
   stream = await navigator.mediaDevices.getDisplayMedia({
-    video: { mediaSource: "screen" },
+    video: { mediaSource: "self" },
+    // video: { cursor: "always", displaySurface: "browser" },
     // video: true,
   });
-  recorder = new MediaRecorder(stream);
 
-  const chunks = [];
-  recorder.ondataavailable = (e) => chunks.push(e.data);
-  recorder.onstop = (e) => {
-    // create video
-    console.log(chunks);
-    const completeBlob = new Blob(chunks, { type: chunks[0].type });
-    console.log(URL.createObjectURL(completeBlob));
-    video1.src = URL.createObjectURL(completeBlob);
-    // end of create video
+  const options = { mimeType: "video/webm" };
+  recorder = new MediaRecorder(stream, options);
+  chunks = [];
+  // recorder.ondataavailable = (e) => {
+  //   chunks.push(e.data);
+  // };
 
-    // stop webcam video code
-    var tracks = streamVideo.getTracks();
-    for (var i = 0; i < tracks.length; i++) {
-      var track = tracks[i];
-      track.stop();
+  recorder.addEventListener("dataavailable", function (e) {
+    if (e.data.size > 0) {
+      chunks.push(e.data);
     }
 
-    video2.srcObject = null;
-    //end stop webcam video code
-  };
+    if (shouldStop === true && stopped === false) {
+      mediaRecorder.stop();
+      stopped = true;
+    }
+  });
 
   recorder.start();
 }
@@ -54,10 +54,28 @@ start.addEventListener("click", () => {
   startRecording();
 });
 
-stop.addEventListener("click", () => {
+stop.addEventListener("click", async () => {
   stop.setAttribute("disabled", true);
   start.removeAttribute("disabled");
+  shouldStop = true;
 
-  recorder.stop();
-  stream.getVideoTracks()[0].stop();
+  recorder.addEventListener("stop", function () {
+    downloadLink.href = URL.createObjectURL(new Blob(chunks));
+    downloadLink.download = "acetest.webm";
+
+    const completeBlob = new Blob(chunks, { type: chunks[0].type });
+    console.log(completeBlob);
+    console.log(URL.createObjectURL(completeBlob));
+    video1.src = URL.createObjectURL(completeBlob);
+
+    // stop webcam video code
+    var tracks = streamVideo.getTracks();
+    for (var i = 0; i < tracks.length; i++) {
+      var track = tracks[i];
+      track.stop();
+    }
+
+    video2.srcObject = null;
+    //end stop webcam video code
+  });
 });
